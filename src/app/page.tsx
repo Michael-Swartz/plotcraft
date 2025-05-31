@@ -15,6 +15,12 @@ export default function Home() {
       disabled: false
     },
     {
+      title: "3D Ocean Wave Simulation",
+      description: "Experience realistic 3D ocean waves from a beach perspective with full camera control",
+      href: "/wireframe-waves",
+      disabled: false
+    },
+    {
       title: "Coming Soon",
       description: "More SVG generators are being crafted...",
       href: "#",

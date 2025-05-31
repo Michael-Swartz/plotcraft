@@ -136,7 +136,7 @@ export default function KineticTextPage() {
     const p5 = p5Instance.current
 
     let svgOutput = `<svg width="${p5.width}" height="${p5.height}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" fill="white"/>
+  <rect width="${p5.width}" height="${p5.height}" fill="white"/>
   <g text-anchor="middle" dominant-baseline="middle" font-family="sans-serif">`
 
     const charCellHeight = baseFontSize * density
