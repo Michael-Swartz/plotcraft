@@ -15,12 +15,11 @@ interface MountainParameters {
   gridResolutionZ: number;
   mountainHeightScale: number;
   noiseScale: number;
-  noiseDetailLod: number;
-  noiseDetailFalloff: number;
   strokeWeight: number;
   initialRotationX: number;
   initialRotationY: number;
   initialRotationZ: number;
+  zoomLevel: number;
 }
 
 interface LineSegment3D {
@@ -32,16 +31,15 @@ export default function MountainGeneratorPage() {
   const [params, setParams] = useState<MountainParameters>({
     gridSizeX: 700,
     gridSizeZ: 700,
-    gridResolutionX: 35,
-    gridResolutionZ: 35,
+    gridResolutionX: 60,
+    gridResolutionZ: 60,
     mountainHeightScale: 200,
-    noiseScale: 0.04,
-    noiseDetailLod: 4,
-    noiseDetailFalloff: 0.35,
+    noiseScale: 0.015,
     strokeWeight: 0.8,
-    initialRotationX: 55,
+    initialRotationX: -30,
     initialRotationY: 0,
-    initialRotationZ: -40,
+    initialRotationZ: 0,
+    zoomLevel: 0,
   });
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 10000));
 
@@ -64,10 +62,8 @@ export default function MountainGeneratorPage() {
     const lines: LineSegment3D[] = [];
     const {
       gridSizeX, gridSizeZ, gridResolutionX, gridResolutionZ,
-      mountainHeightScale, noiseScale, noiseDetailLod, noiseDetailFalloff
+      mountainHeightScale, noiseScale
     } = currentParams;
-
-    p5.noiseDetail(noiseDetailLod, noiseDetailFalloff);
 
     const cellWidth = gridSizeX / gridResolutionX;
     const cellDepth = gridSizeZ / gridResolutionZ;
@@ -111,6 +107,7 @@ export default function MountainGeneratorPage() {
     p5.noFill();
 
     p5.push(); // Isolate camera and transformations
+    p5.translate(0, 0, params.zoomLevel); // Apply zoom translation
     p5.rotateX(p5.radians(params.initialRotationX));
     p5.rotateY(p5.radians(params.initialRotationY));
     p5.rotateZ(p5.radians(params.initialRotationZ));
@@ -274,15 +271,7 @@ export default function MountainGeneratorPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700 mb-1 block">Noise Scale ({params.noiseScale.toFixed(3)})</p>
-              <Slider value={[params.noiseScale]} onValueChange={v => handleParamChange('noiseScale', v[0])} min={0.001} max={0.25} step={0.001} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1 block">Noise LOD ({params.noiseDetailLod})</p>
-              <Slider value={[params.noiseDetailLod]} onValueChange={v => handleParamChange('noiseDetailLod', v[0])} min={1} max={12} step={1} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1 block">Noise Falloff ({params.noiseDetailFalloff.toFixed(2)})</p>
-              <Slider value={[params.noiseDetailFalloff]} onValueChange={v => handleParamChange('noiseDetailFalloff', v[0])} min={0.1} max={0.9} step={0.01} />
+              <Slider value={[params.noiseScale]} onValueChange={v => handleParamChange('noiseScale', v[0])} min={0.001} max={0.03} step={0.001} />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700 mb-1 block">Stroke Weight ({params.strokeWeight.toFixed(1)})</p>
@@ -300,11 +289,12 @@ export default function MountainGeneratorPage() {
               <p className="text-sm font-medium text-gray-700 mb-1 block">Rotation Z ({params.initialRotationZ}°)</p>
               <Slider value={[params.initialRotationZ]} onValueChange={v => handleParamChange('initialRotationZ', v[0])} min={-180} max={180} step={1} />
             </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1 block">Zoom ({params.zoomLevel})</p>
+              <Slider value={[params.zoomLevel]} onValueChange={v => handleParamChange('zoomLevel', v[0])} min={-500} max={500} step={10} />
+            </div>
             <Button onClick={regenerate} className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md shadow-sm transition duration-150">
               Regenerate (New Seed)
-            </Button>
-             <Button onClick={() => p5Instance.current?.redraw()} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md shadow-sm transition duration-150 mt-2">
-              Redraw
             </Button>
             <Button onClick={exportSVG} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-md shadow-sm transition duration-150 mt-2">
               Export as SVG

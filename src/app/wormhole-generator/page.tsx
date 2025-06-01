@@ -317,9 +317,6 @@ export default function WormholeGeneratorPage() {
             <Button onClick={regenerate} className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md shadow-sm transition duration-150">
               Regenerate (New Seed)
             </Button>
-             <Button onClick={() => p5Instance.current?.redraw()} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-md shadow-sm transition duration-150 mt-2">
-              Redraw
-            </Button>
             <Button onClick={exportSVG} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-md shadow-sm transition duration-150 mt-2">
               Export as SVG
             </Button>
