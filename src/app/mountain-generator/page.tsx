@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import p5 from 'p5'
 
 const Sketch = dynamic(() => import('react-p5'), { ssr: false })
 import type P5Instance from 'p5'
@@ -248,7 +247,7 @@ export default function MountainGeneratorPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="md:col-span-3">
             <div className="border border-gray-300 rounded-md overflow-hidden aspect-[4/3] shadow-inner bg-white">
-              {/* @ts-ignore p5 types can be tricky with dynamic import */}
+              {/* @ts-expect-error p5 types can be tricky with dynamic import */}
               <Sketch setup={setup} draw={draw} />
             </div>
           </div>

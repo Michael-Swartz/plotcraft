@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback, ChangeEvent } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 // import { Slider } from '@/components/ui/slider' // Temporarily commented out
-import p5 from 'p5'
 
 const Sketch = dynamic(() => import('react-p5'), { ssr: false })
 import type P5Instance from 'p5'
@@ -119,22 +118,22 @@ export default function AbstractBoxesPage() {
     const cosZ = p5.cos(rz); const sinZ = p5.sin(rz);
 
     const transformedCorners = localCorners.map(lc => {
-      let c = lc.copy();
+      const c = lc.copy();
       
       // Apply ZYX Euler rotation order
       // Z rotation
-      let x1 = c.x * cosZ - c.y * sinZ;
-      let y1 = c.x * sinZ + c.y * cosZ;
+      const x1 = c.x * cosZ - c.y * sinZ;
+      const y1 = c.x * sinZ + c.y * cosZ;
       c.x = x1; c.y = y1;
 
       // Y rotation
-      let x2 = c.x * cosY + c.z * sinY;
-      let z2 = -c.x * sinY + c.z * cosY;
+      const x2 = c.x * cosY + c.z * sinY;
+      const z2 = -c.x * sinY + c.z * cosY;
       c.x = x2; c.z = z2;
 
       // X rotation
-      let y3 = c.y * cosX - c.z * sinX;
-      let z3 = c.y * sinX + c.z * cosX;
+      const y3 = c.y * cosX - c.z * sinX;
+      const z3 = c.y * sinX + c.z * cosX;
       c.y = y3; c.z = z3;
       
       c.add(box.position); // Translate to final position
