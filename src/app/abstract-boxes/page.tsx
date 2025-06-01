@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, ChangeEvent } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-// import { Slider } from '@/components/ui/slider' // Temporarily commented out
+import { Slider } from '@/components/ui/slider'
 
 const Sketch = dynamic(() => import('react-p5'), { ssr: false })
 import type P5Instance from 'p5'
@@ -74,18 +75,18 @@ export default function AbstractBoxesPage() {
 
   // Specific handler for dual-value sliders (HTML input range doesn't directly support this)
   // For now, we use separate inputs for min/max if using standard HTML range
-  const handleMinMaxChange = (paramNameMin: keyof AbstractBoxParameters, paramNameMax: keyof AbstractBoxParameters, minValue: number, maxValue: number) => {
-    setParams(prev => ({
-      ...prev,
-      [paramNameMin]: Math.min(minValue, maxValue), // Ensure min is not greater than max
-      [paramNameMax]: Math.max(minValue, maxValue),
-    }));
-  };
+  // const handleMinMaxChange = (paramNameMin: keyof AbstractBoxParameters, paramNameMax: keyof AbstractBoxParameters, minValue: number, maxValue: number) => {
+  //   setParams(prev => ({
+  //     ...prev,
+  //     [paramNameMin]: Math.min(minValue, maxValue), // Ensure min is not greater than max
+  //     [paramNameMax]: Math.max(minValue, maxValue),
+  //   }));
+  // };
 
   // Simplified handler for HTML input range
-  const handleRangeInputChange = (e: ChangeEvent<HTMLInputElement>, paramName: keyof AbstractBoxParameters) => {
-    handleParamChange(paramName, parseFloat(e.target.value));
-  };
+  // const handleRangeInputChange = (e: ChangeEvent<HTMLInputElement>, paramName: keyof AbstractBoxParameters) => {
+  //   handleParamChange(paramName, parseFloat(e.target.value));
+  // };
 
   const setup = (p5Setup: P5Instance, canvasParentRef: Element) => {
     p5Instance.current = p5Setup;
@@ -319,7 +320,14 @@ export default function AbstractBoxesPage() {
  return (
     <main className="min-h-screen p-4 md:p-8 bg-gray-100 flex flex-col items-center">
       <div className="w-full max-w-6xl bg-white shadow-xl p-4 md:p-8 rounded-lg">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-700">Abstract Box Generator</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-700 flex-grow">Abstract Box Generator</h1>
+          <Link href="/" legacyBehavior passHref>
+            <Button asChild variant="outline" className="ml-4">
+              <a>Back to Home</a>
+            </Button>
+          </Link>
+        </div>
         
         <div className="flex flex-col gap-6 mb-6">
           <div className="w-full">
@@ -330,90 +338,90 @@ export default function AbstractBoxesPage() {
           </div>
 
           <div className="w-full space-y-6 p-4 border border-gray-200 rounded-lg shadow-sm bg-slate-50">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-                <div><p className="text-lg font-semibold text-gray-700 col-span-full">Box & Placement</p></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
+
+                {/* Box Properties Section */}
+                <div className="col-span-full"><p className="text-lg font-semibold text-gray-700">Box Properties</p></div>
                 <div className="col-span-1">
                   <label htmlFor="numBoxes" className={labelStyle}>Number of Boxes ({params.numBoxes})</label>
-                  <input type="range" id="numBoxes" value={params.numBoxes} onChange={(e) => handleRangeInputChange(e, 'numBoxes')} min={1} max={200} step={1} className={inputStyle} />
+                  <Slider value={[params.numBoxes]} onValueChange={v => handleParamChange('numBoxes', v[0])} min={1} max={200} step={1} />
                 </div>
-                
                 <div className="col-span-1">
                   <label htmlFor="minBoxWidth" className={labelStyle}>Min Width ({params.minBoxWidth})</label>
-                  <input type="range" id="minBoxWidth" value={params.minBoxWidth} onChange={(e) => handleMinMaxChange('minBoxWidth', 'maxBoxWidth', parseFloat(e.target.value), params.maxBoxWidth)} min={5} max={200} step={1} className={inputStyle} />
+                  <Slider value={[params.minBoxWidth]} onValueChange={v => handleParamChange('minBoxWidth', v[0])} min={5} max={200} step={1} />
                 </div>
                 <div className="col-span-1">
                   <label htmlFor="maxBoxWidth" className={labelStyle}>Max Width ({params.maxBoxWidth})</label>
-                  <input type="range" id="maxBoxWidth" value={params.maxBoxWidth} onChange={(e) => handleMinMaxChange('minBoxWidth', 'maxBoxWidth', params.minBoxWidth, parseFloat(e.target.value))} min={5} max={200} step={1} className={inputStyle} />
+                  <Slider value={[params.maxBoxWidth]} onValueChange={v => handleParamChange('maxBoxWidth', v[0])} min={5} max={200} step={1} />
                 </div>
-                <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
-
+                
                 <div className="col-span-1">
                   <label htmlFor="minBoxHeight" className={labelStyle}>Min Height ({params.minBoxHeight})</label>
-                  <input type="range" id="minBoxHeight" value={params.minBoxHeight} onChange={(e) => handleMinMaxChange('minBoxHeight', 'maxBoxHeight', parseFloat(e.target.value), params.maxBoxHeight)} min={5} max={300} step={1} className={inputStyle} />
+                  <Slider value={[params.minBoxHeight]} onValueChange={v => handleParamChange('minBoxHeight', v[0])} min={5} max={300} step={1} />
                 </div>
                 <div className="col-span-1">
                   <label htmlFor="maxBoxHeight" className={labelStyle}>Max Height ({params.maxBoxHeight})</label>
-                  <input type="range" id="maxBoxHeight" value={params.maxBoxHeight} onChange={(e) => handleMinMaxChange('minBoxHeight', 'maxBoxHeight', params.minBoxHeight, parseFloat(e.target.value))} min={5} max={300} step={1} className={inputStyle} />
+                  <Slider value={[params.maxBoxHeight]} onValueChange={v => handleParamChange('maxBoxHeight', v[0])} min={5} max={300} step={1} />
                 </div>
-                <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
-                <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
+                <div className="col-span-1"> {/* Spacer or next item */} </div> 
 
                 <div className="col-span-1">
                   <label htmlFor="minBoxDepth" className={labelStyle}>Min Depth ({params.minBoxDepth})</label>
-                  <input type="range" id="minBoxDepth" value={params.minBoxDepth} onChange={(e) => handleMinMaxChange('minBoxDepth', 'maxBoxDepth', parseFloat(e.target.value), params.maxBoxDepth)} min={5} max={200} step={1} className={inputStyle} />
+                  <Slider value={[params.minBoxDepth]} onValueChange={v => handleParamChange('minBoxDepth', v[0])} min={5} max={200} step={1} />
                 </div>
                 <div className="col-span-1">
                   <label htmlFor="maxBoxDepth" className={labelStyle}>Max Depth ({params.maxBoxDepth})</label>
-                  <input type="range" id="maxBoxDepth" value={params.maxBoxDepth} onChange={(e) => handleMinMaxChange('minBoxDepth', 'maxBoxDepth', params.minBoxDepth, parseFloat(e.target.value))} min={5} max={200} step={1} className={inputStyle} />
+                  <Slider value={[params.maxBoxDepth]} onValueChange={v => handleParamChange('maxBoxDepth', v[0])} min={5} max={200} step={1} />
                 </div>
-                <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
-                <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
+                 <div className="col-span-1"> {/* Spacer or next item */} </div> 
+                
+                {/* Placement Volume Section */}
+                <div className="col-span-full mt-4"><p className="text-lg font-semibold text-gray-700">Placement Volume</p></div>
+                <div className="col-span-1">
+                  <label htmlFor="placementVolumeWidth" className={labelStyle}>Width ({params.placementVolumeWidth})</label>
+                  <Slider value={[params.placementVolumeWidth]} onValueChange={v => handleParamChange('placementVolumeWidth', v[0])} min={100} max={1000} step={10} />
+                </div>
+                <div className="col-span-1">
+                  <label htmlFor="placementVolumeHeight" className={labelStyle}>Height ({params.placementVolumeHeight})</label>
+                  <Slider value={[params.placementVolumeHeight]} onValueChange={v => handleParamChange('placementVolumeHeight', v[0])} min={100} max={1000} step={10} />
+                </div>
+                <div className="col-span-1">
+                  <label htmlFor="placementVolumeDepth" className={labelStyle}>Depth ({params.placementVolumeDepth})</label>
+                  <Slider value={[params.placementVolumeDepth]} onValueChange={v => handleParamChange('placementVolumeDepth', v[0])} min={100} max={1000} step={10} />
+                </div>
 
+                {/* Individual Box Rotation Section */}
+                <div className="col-span-full mt-4"><p className="text-lg font-semibold text-gray-700">Individual Box Rotation</p></div>
                 <div className="col-span-1">
-                  <label htmlFor="placementVolumeWidth" className={labelStyle}>Placement Width ({params.placementVolumeWidth})</label>
-                  <input type="range" id="placementVolumeWidth" value={params.placementVolumeWidth} onChange={(e) => handleRangeInputChange(e, 'placementVolumeWidth')} min={100} max={1000} step={10} className={inputStyle} />
+                  <label htmlFor="maxRotationX" className={labelStyle}>Max X ({params.maxRotationX}°)</label>
+                  <Slider value={[params.maxRotationX]} onValueChange={v => handleParamChange('maxRotationX', v[0])} min={0} max={180} step={1} />
                 </div>
                 <div className="col-span-1">
-                  <label htmlFor="placementVolumeHeight" className={labelStyle}>Placement Height ({params.placementVolumeHeight})</label>
-                  <input type="range" id="placementVolumeHeight" value={params.placementVolumeHeight} onChange={(e) => handleRangeInputChange(e, 'placementVolumeHeight')} min={100} max={1000} step={10} className={inputStyle} />
+                  <label htmlFor="maxRotationY" className={labelStyle}>Max Y ({params.maxRotationY}°)</label>
+                  <Slider value={[params.maxRotationY]} onValueChange={v => handleParamChange('maxRotationY', v[0])} min={0} max={180} step={1} />
                 </div>
                 <div className="col-span-1">
-                  <label htmlFor="placementVolumeDepth" className={labelStyle}>Placement Depth ({params.placementVolumeDepth})</label>
-                  <input type="range" id="placementVolumeDepth" value={params.placementVolumeDepth} onChange={(e) => handleRangeInputChange(e, 'placementVolumeDepth')} min={100} max={1000} step={10} className={inputStyle} />
+                  <label htmlFor="maxRotationZ" className={labelStyle}>Max Z ({params.maxRotationZ}°)</label>
+                  <Slider value={[params.maxRotationZ]} onValueChange={v => handleParamChange('maxRotationZ', v[0])} min={0} max={180} step={1} />
                 </div>
-                 <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
 
-                <div><p className="text-lg font-semibold text-gray-700 mt-4 col-span-full">Individual Box Rotation</p></div>
-                <div className="col-span-1">
-                  <label htmlFor="maxRotationX" className={labelStyle}>Max X Rotation ({params.maxRotationX}°)</label>
-                  <input type="range" id="maxRotationX" value={params.maxRotationX} onChange={(e) => handleRangeInputChange(e, 'maxRotationX')} min={0} max={180} step={1} className={inputStyle} />
-                </div>
-                <div className="col-span-1">
-                  <label htmlFor="maxRotationY" className={labelStyle}>Max Y Rotation ({params.maxRotationY}°)</label>
-                  <input type="range" id="maxRotationY" value={params.maxRotationY} onChange={(e) => handleRangeInputChange(e, 'maxRotationY')} min={0} max={180} step={1} className={inputStyle} />
-                </div>
-                <div className="col-span-1">
-                  <label htmlFor="maxRotationZ" className={labelStyle}>Max Z Rotation ({params.maxRotationZ}°)</label>
-                  <input type="range" id="maxRotationZ" value={params.maxRotationZ} onChange={(e) => handleRangeInputChange(e, 'maxRotationZ')} min={0} max={180} step={1} className={inputStyle} />
-                </div>
-                 <div className="col-span-1"> {/* Empty div for alignment or future use */} </div> 
-
-                <div><p className="text-lg font-semibold text-gray-700 mt-4 col-span-full">Scene & View</p></div>
+                {/* Scene & View Section */}
+                <div className="col-span-full mt-4"><p className="text-lg font-semibold text-gray-700">Scene & View</p></div>
                 <div className="col-span-1">
                   <label htmlFor="strokeWeight" className={labelStyle}>Stroke Weight ({params.strokeWeight.toFixed(1)})</label>
-                  <input type="range" id="strokeWeight" value={params.strokeWeight} onChange={(e) => handleRangeInputChange(e, 'strokeWeight')} min={0.1} max={5} step={0.1} className={inputStyle} />
+                  <Slider value={[params.strokeWeight]} onValueChange={v => handleParamChange('strokeWeight', v[0])} min={0.1} max={5} step={0.1} />
                 </div>
                 <div className="col-span-1">
-                  <label htmlFor="initialRotationX" className={labelStyle}>Initial X Rotation ({params.initialRotationX}°)</label>
-                  <input type="range" id="initialRotationX" value={params.initialRotationX} onChange={(e) => handleRangeInputChange(e, 'initialRotationX')} min={-180} max={180} step={1} className={inputStyle} />
+                  <label htmlFor="initialRotationX" className={labelStyle}>Scene X Rotation ({params.initialRotationX}°)</label>
+                  <Slider value={[params.initialRotationX]} onValueChange={v => handleParamChange('initialRotationX', v[0])} min={-180} max={180} step={1} />
                 </div>
                 <div className="col-span-1">
-                  <label htmlFor="initialRotationY" className={labelStyle}>Initial Y Rotation ({params.initialRotationY}°)</label>
-                  <input type="range" id="initialRotationY" value={params.initialRotationY} onChange={(e) => handleRangeInputChange(e, 'initialRotationY')} min={-180} max={180} step={1} className={inputStyle} />
+                  <label htmlFor="initialRotationY" className={labelStyle}>Scene Y Rotation ({params.initialRotationY}°)</label>
+                  <Slider value={[params.initialRotationY]} onValueChange={v => handleParamChange('initialRotationY', v[0])} min={-180} max={180} step={1} />
                 </div>
                 <div className="col-span-1">
-                  <label htmlFor="initialRotationZ" className={labelStyle}>Initial Z Rotation ({params.initialRotationZ}°)</label>
-                  <input type="range" id="initialRotationZ" value={params.initialRotationZ} onChange={(e) => handleRangeInputChange(e, 'initialRotationZ')} min={-180} max={180} step={1} className={inputStyle} />
+                  <label htmlFor="initialRotationZ" className={labelStyle}>Scene Z Rotation ({params.initialRotationZ}°)</label>
+                  <Slider value={[params.initialRotationZ]} onValueChange={v => handleParamChange('initialRotationZ', v[0])} min={-180} max={180} step={1} />
                 </div>
             </div>
             

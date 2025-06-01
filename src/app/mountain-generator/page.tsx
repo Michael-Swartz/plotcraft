@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 
@@ -239,7 +240,14 @@ export default function MountainGeneratorPage() {
   return (
     <main className="min-h-screen p-4 md:p-8 bg-gray-100 flex flex-col items-center">
       <div className="w-full max-w-6xl bg-white shadow-xl p-4 md:p-8 rounded-lg">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-700">Wireframe Mountain Generator</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-700 flex-grow">Wireframe Mountain Generator</h1>
+          <Link href="/" legacyBehavior passHref>
+            <Button asChild variant="outline" className="ml-4">
+              <a>Back to Home</a>
+            </Button>
+          </Link>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="md:col-span-3">
