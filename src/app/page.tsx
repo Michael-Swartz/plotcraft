@@ -1,55 +1,46 @@
 import Link from 'next/link'
 
-export default function Home() {
-  const sketches = [
+export default function HomePage() {
+  const generators = [
     {
-      title: "Abstract Box Generator",
-      description: "Create mesmerizing 3D box arrangements with customizable parameters",
-      href: "/abstract-boxes",
-      disabled: false
+      name: 'Wormhole Generator',
+      description: 'Create and export 3D wireframe wormhole SVGs.',
+      href: '/wormhole-generator',
     },
     {
-      title: "Kinetic Typography",
-      description: "Create dynamic animated text with wave effects and color transitions",
-      href: "/kinetic-text",
-      disabled: false
+      name: 'Wireframe Mountain Generator',
+      description: 'Generate and export 3D wireframe mountain landscapes.',
+      href: '/mountain-generator',
     },
     {
-      title: "3D Ocean Wave Simulation",
-      description: "Experience realistic 3D ocean waves from a beach perspective with full camera control",
-      href: "/wireframe-waves",
-      disabled: false
+      name: 'Abstract Box Generator',
+      description: 'Generate and export 3D arrangements of wireframe boxes.',
+      href: '/abstract-boxes',
     },
-    {
-      title: "Coming Soon",
-      description: "More SVG generators are being crafted...",
-      href: "#",
-      disabled: true
-    }
   ]
 
   return (
-    <main className="min-h-screen p-8 md:p-24">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">PlotCraft</h1>
-        <p className="text-xl text-gray-800 mb-12">A collection of abstract SVG generators for pen plotting</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sketches.map((sketch, index) => (
-            <Link
-              key={index}
-              href={sketch.href}
-              className={`block p-6 rounded-lg border ${
-                sketch.disabled 
-                  ? 'bg-gray-50 border-gray-200 cursor-not-allowed' 
-                  : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all'
-              }`}
-            >
-              <h2 className="text-xl font-semibold mb-2 text-gray-900">{sketch.title}</h2>
-              <p className="text-gray-800">{sketch.description}</p>
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 md:p-8 flex flex-col items-center text-white">
+      <div className="w-full max-w-4xl">
+        <header className="mb-12 text-center">
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-3 tracking-tight">
+            PlotCraft
+          </h1>
+          <p className="text-xl md:text-2xl text-slate-300">
+            A Collection of Generative Art Tools for Pen Plotters & SVG Exports
+          </p>
+        </header>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {generators.map((generator) => (
+            <Link href={generator.href} key={generator.name} passHref>
+              <div className="block p-6 md:p-8 bg-slate-800 hover:bg-slate-700 rounded-xl shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 cursor-pointer h-full">
+                <h2 className="text-2xl font-bold mb-2 text-sky-400">{generator.name}</h2>
+                <p className="text-slate-400 text-sm md:text-base">{generator.description}</p>
+              </div>
             </Link>
           ))}
-        </div>
+        </section>
       </div>
     </main>
   )
