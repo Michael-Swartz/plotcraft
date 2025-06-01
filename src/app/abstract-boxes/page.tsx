@@ -157,7 +157,7 @@ export default function AbstractBoxesPage() {
     return lines;
   };
 
-  const generateBoxes = (p5: P5Instance, currentParams: AbstractBoxParameters, currentSeed: number): Box3D[] => {
+  const generateBoxes = useCallback((p5: P5Instance, currentParams: AbstractBoxParameters, currentSeed: number): Box3D[] => {
     p5.randomSeed(currentSeed); // Ensure generation is based on the current seed
     const boxes: Box3D[] = [];
     const {
@@ -191,7 +191,7 @@ export default function AbstractBoxesPage() {
       boxes.push({ ...boxData, lines });
     }
     return boxes;
-  };
+  }, []);
 
   const draw = useCallback((p5: P5Instance) => {
     if (!p5) return;
@@ -314,7 +314,6 @@ export default function AbstractBoxesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const inputStyle = "w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm";
   const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
 
  return (
