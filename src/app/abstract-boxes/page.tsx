@@ -216,7 +216,7 @@ export default function AbstractBoxesPage() {
       }
     }
     p5.pop(); // Restore global state
-  }, [params, seed]);
+  }, [params, seed, generateBoxes]);
 
   useEffect(() => {
     if (p5Instance.current) {
@@ -324,7 +324,7 @@ export default function AbstractBoxesPage() {
         <div className="flex flex-col gap-6 mb-6">
           <div className="w-full">
             <div className="border border-gray-300 rounded-md overflow-hidden aspect-[4/3] shadow-inner bg-white mx-auto" style={{ maxWidth: canvasSize.width }}>
-              {/* @ts-ignore p5 types can be tricky */}
+              {/* @ts-expect-error p5 types can be tricky */}
               <Sketch setup={setup} draw={draw} />
             </div>
           </div>
