@@ -232,14 +232,14 @@ export default function AbstractBoxesPage() {
   };
 
   const project3DTo2D = (p5_main: P5Instance, point3D: P5Instance.Vector): { x: number, y: number, z: number } | null => {
-    // @ts-ignore 
-    if (!p5_main || !p5_main._renderer || !p5_main._renderer.uPMatrix || !p5_main._renderer.uMVMatrix) {
-      console.error("P5.js WebGL renderer internal matrices not found.");
+    // @ts-expect-error Accessing internal _renderer property and its sub-properties
+    if (!p5_main._renderer || !p5_main._renderer.uPMatrix || !p5_main._renderer.uMVMatrix) {
+      console.error("P5.js WebGL renderer internal matrices (uPMatrix or uMVMatrix) not found.");
       return null;
     }
-    // @ts-ignore
+    // @ts-expect-error Accessing internal _renderer.uPMatrix property
     const projMatrix = p5_main._renderer.uPMatrix;
-    // @ts-ignore
+    // @ts-expect-error Accessing internal _renderer.uMVMatrix property
     const mvMatrix = p5_main._renderer.uMVMatrix;
 
     const pointVec4 = [point3D.x, point3D.y, point3D.z, 1.0];

@@ -157,15 +157,14 @@ export default function WormholeGeneratorPage() {
   // Function to manually project a 3D point to 2D screen coordinates
   // This replicates what p5.screenX/Y do for the main WEBGL canvas
   const project3DTo2D = (p5_main: P5Instance, point3D: P5Instance.Vector): { x: number, y: number, z: number } | null => {
-    // @ts-ignore _renderer is p5's internal WebGL renderer properties
-    if (!p5_main || !p5_main._renderer || !p5_main._renderer.uPMatrix || !p5_main._renderer.uMVMatrix) {
-      console.error("P5.js WebGL renderer internal matrices not found for SVG export.");
+    // @ts-expect-error Accessing internal _renderer property and its sub-properties
+    if (!p5_main._renderer || !p5_main._renderer.uPMatrix || !p5_main._renderer.uMVMatrix) {
+      console.error("P5.js WebGL renderer internal matrices (uPMatrix or uMVMatrix) not found.");
       return null;
     }
-
-    // @ts-ignore Get PMatrix (Projection) and MVMatrix (ModelView)
+    // @ts-expect-error Accessing internal _renderer.uPMatrix property
     const projMatrix = p5_main._renderer.uPMatrix;
-    // @ts-ignore
+    // @ts-expect-error Accessing internal _renderer.uMVMatrix property
     const mvMatrix = p5_main._renderer.uMVMatrix;
 
     const point4D = [point3D.x, point3D.y, point3D.z, 1.0];
