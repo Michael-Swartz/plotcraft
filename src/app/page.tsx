@@ -18,10 +18,11 @@ export default function HomePage() {
       href: '/abstract-boxes',
     },
     {
-      name: 'Delaunay Triangulation Generator',
-      description: 'Create and export 2D Delaunay triangulations.',
+      name: 'Voronoi Diagram Generator',
+      description: 'Generate organic cellular patterns with customizable point distributions for pen plotting.',
       href: '/voronoi-diagram',
     },
+
   ]
 
   return (

@@ -10,216 +10,340 @@ import { Delaunay } from 'd3-delaunay'
 const Sketch = dynamic(() => import('react-p5'), { ssr: false })
 import type P5Instance from 'p5'
 
-// Define a Point type compatible with d3-delaunay
-type Point = [number, number];
+type Point = [number, number]
 
-interface TriangulationParameters {
-  numPoints: number;
-  showPoints: boolean;
-  showTriangleEdges: boolean;
+interface VoronoiParameters {
+  numPoints: number
+  boundaryMargin: number
+  minDistance: number
+  distributionType: 'random' | 'uniform' | 'clustered'
+  clusterFactor: number
 }
 
-export default function DelaunayTriangulationPage() {
-  const [params, setParams] = useState<TriangulationParameters>({
+export default function VoronoiDiagramPage() {
+  const [params, setParams] = useState<VoronoiParameters>({
     numPoints: 30,
-    showPoints: true,
-    showTriangleEdges: true,
-  });
-  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 10000));
+    boundaryMargin: 20,
+    minDistance: 0,
+    distributionType: 'random',
+    clusterFactor: 0.5
+  })
+  
+  const [seed, setSeed] = useState(1234) // Fixed initial seed for SSR
+  
+  const p5Instance = useRef<P5Instance | null>(null)
+  const canvasSize = { width: 800, height: 600 }
+  const sites = useRef<Point[]>([])
+  const delaunay = useRef<Delaunay<Point> | null>(null)
+  const voronoi = useRef<any>(null)
 
-  const p5Instance = useRef<P5Instance | null>(null);
-  const canvasSize = { width: 800, height: 600 };
-  const sitesToDraw = useRef<P5Instance.Vector[]>([]); // For p5.point drawing
-  const sitePointsForDelaunay = useRef<Point[]>([]); // For Delaunay input and SVG export
-  const delaunayRef = useRef<Delaunay<Point> | undefined>(undefined);
+  // Set random seed after hydration
+  useEffect(() => {
+    setSeed(Math.floor(Math.random() * 10000))
+  }, [])
 
-  const handleParamChange = (paramName: keyof TriangulationParameters, value: number | boolean) => {
-    setParams(prev => ({ ...prev, [paramName]: value }));
-  };
+  const handleParamChange = useCallback((paramName: keyof VoronoiParameters, value: number | string) => {
+    setParams(prev => ({ ...prev, [paramName]: value }))
+  }, [])
 
-  const generateSitesAndTriangulation = useCallback((p5: P5Instance, currentParams: TriangulationParameters, currentSeed: number) => {
-    p5.randomSeed(currentSeed);
-    const newSitesArray: Point[] = []; 
-    const newSitesToDraw: P5Instance.Vector[] = [];
-    for (let i = 0; i < currentParams.numPoints; i++) {
-      const x = p5.random(canvasSize.width);
-      const y = p5.random(canvasSize.height);
-      newSitesArray.push([x, y]);
-      newSitesToDraw.push(p5.createVector(x,y)); 
-    }
-    sitePointsForDelaunay.current = newSitesArray;
-    sitesToDraw.current = newSitesToDraw;
-
-    if (sitePointsForDelaunay.current.length >= 3) { 
-      delaunayRef.current = Delaunay.from(sitePointsForDelaunay.current);
+  const generatePoints = useCallback((p5: P5Instance, currentParams: VoronoiParameters): Point[] => {
+    const points: Point[] = []
+    const margin = currentParams.boundaryMargin
+    const width = canvasSize.width - 2 * margin
+    const height = canvasSize.height - 2 * margin
+    
+    if (currentParams.distributionType === 'uniform') {
+      // Grid-based with some randomness
+      const cols = Math.ceil(Math.sqrt(currentParams.numPoints * (width / height)))
+      const rows = Math.ceil(currentParams.numPoints / cols)
+      const cellWidth = width / cols
+      const cellHeight = height / rows
+      
+      for (let i = 0; i < currentParams.numPoints; i++) {
+        const col = i % cols
+        const row = Math.floor(i / cols)
+        const centerX = margin + col * cellWidth + cellWidth / 2
+        const centerY = margin + row * cellHeight + cellHeight / 2
+        const offsetX = p5.random(-cellWidth * 0.3, cellWidth * 0.3)
+        const offsetY = p5.random(-cellHeight * 0.3, cellHeight * 0.3)
+        points.push([centerX + offsetX, centerY + offsetY])
+      }
+    } else if (currentParams.distributionType === 'clustered') {
+      // Generate cluster centers first
+      const numClusters = Math.max(1, Math.floor(2 + currentParams.clusterFactor * 8)) // 2-10 clusters
+      const clusterCenters: Point[] = []
+      
+      for (let i = 0; i < numClusters; i++) {
+        clusterCenters.push([
+          p5.random(margin + 50, canvasSize.width - margin - 50),
+          p5.random(margin + 50, canvasSize.height - margin - 50)
+        ])
+      }
+      
+      // Distribute points around clusters
+      for (let i = 0; i < currentParams.numPoints; i++) {
+        const cluster = clusterCenters[i % numClusters]
+        const maxRadius = 20 + (1 - currentParams.clusterFactor) * 100 // tighter clusters when factor is lower
+        const radius = p5.random(0, maxRadius)
+        const angle = p5.random(0, p5.TWO_PI)
+        const x = cluster[0] + Math.cos(angle) * radius
+        const y = cluster[1] + Math.sin(angle) * radius
+        points.push([
+          p5.constrain(x, margin, canvasSize.width - margin),
+          p5.constrain(y, margin, canvasSize.height - margin)
+        ])
+      }
     } else {
-      delaunayRef.current = undefined;
+      // Random distribution
+      for (let i = 0; i < currentParams.numPoints; i++) {
+        points.push([
+          p5.random(margin, canvasSize.width - margin),
+          p5.random(margin, canvasSize.height - margin)
+        ])
+      }
     }
-  }, []);
-
-  const setup = (p5Setup: P5Instance, canvasParentRef: Element) => {
-    p5Instance.current = p5Setup;
-    p5Setup.createCanvas(canvasSize.width, canvasSize.height).parent(canvasParentRef);
-    p5Setup.pixelDensity(1);
-    p5Setup.randomSeed(seed);
-    p5Setup.noLoop();
-    generateSitesAndTriangulation(p5Setup, params, seed);
-  };
-
-  const draw = useCallback((p5: P5Instance) => {
-    if (!p5) return;
-    p5.background(255); 
-
-    const delaunay = delaunayRef.current;
-    const currentSitePoints = sitePointsForDelaunay.current;
-
-    if (params.showTriangleEdges && delaunay && delaunay.triangles.length > 0 && currentSitePoints.length > 0) {
-      p5.stroke(0); 
-      p5.strokeWeight(1);
-      const triangles = delaunay.triangles;
-      for (let i = 0; i < triangles.length; i += 3) {
-        const p1 = currentSitePoints[triangles[i]];
-        const p2 = currentSitePoints[triangles[i + 1]];
-        const p3 = currentSitePoints[triangles[i + 2]];
-        // Ensure p1, p2, p3 are not undefined before drawing
-        if (p1 && p2 && p3) {
-          p5.line(p1[0], p1[1], p2[0], p2[1]);
-          p5.line(p2[0], p2[1], p3[0], p3[1]);
-          p5.line(p3[0], p3[1], p1[0], p1[1]);
+    
+    // Apply minimum distance constraint if specified
+    if (currentParams.minDistance > 0) {
+      const filteredPoints: Point[] = []
+      
+      for (const point of points) {
+        let tooClose = false
+        for (const existing of filteredPoints) {
+          const dist = Math.sqrt(
+            Math.pow(point[0] - existing[0], 2) + Math.pow(point[1] - existing[1], 2)
+          )
+          if (dist < currentParams.minDistance) {
+            tooClose = true
+            break
+          }
+        }
+        if (!tooClose) {
+          filteredPoints.push(point)
         }
       }
+      
+      return filteredPoints
     }
+    
+    return points
+  }, [canvasSize])
 
-    if (params.showPoints && sitesToDraw.current.length > 0) {
-      p5.stroke(0); 
-      p5.fill(0);
-      p5.strokeWeight(5);
-      for (const site of sitesToDraw.current) {
-        p5.point(site.x, site.y);
+  const generateVoronoiDiagram = useCallback((p5: P5Instance, currentParams: VoronoiParameters, currentSeed: number) => {
+    p5.randomSeed(currentSeed)
+    
+    // Generate points based on distribution type
+    const newSites = generatePoints(p5, currentParams)
+    sites.current = newSites
+    
+    // Create Delaunay triangulation and Voronoi diagram
+    if (sites.current.length >= 3) {
+      delaunay.current = Delaunay.from(sites.current)
+      voronoi.current = delaunay.current.voronoi([0, 0, canvasSize.width, canvasSize.height])
+    } else {
+      delaunay.current = null
+      voronoi.current = null
+    }
+  }, [canvasSize, generatePoints])
+
+  const drawVoronoiCells = useCallback((p5: P5Instance) => {
+    if (!voronoi.current || !sites.current.length) return
+    
+    p5.strokeWeight(1)
+    p5.stroke(0)
+    p5.noFill()
+    
+    for (let i = 0; i < sites.current.length; i++) {
+      const cell = voronoi.current.cellPolygon(i)
+      if (!cell) continue
+      
+      p5.beginShape()
+      for (const point of cell as Point[]) {
+        p5.vertex(point[0], point[1])
       }
-      p5.noFill();
+      p5.endShape(p5.CLOSE)
     }
+  }, [])
 
-  }, [params, seed]); // currentSitePoints is from ref, delaunay is from ref
+  const setup = (p5Setup: P5Instance, canvasParentRef: Element) => {
+    p5Instance.current = p5Setup
+    p5Setup.createCanvas(canvasSize.width, canvasSize.height).parent(canvasParentRef)
+    p5Setup.pixelDensity(1)
+    p5Setup.noLoop()
+    generateVoronoiDiagram(p5Setup, params, seed)
+  }
+
+  const draw = useCallback((p5: P5Instance) => {
+    if (!p5) return
+    
+    p5.background(255)
+    drawVoronoiCells(p5)
+  }, [drawVoronoiCells])
 
   useEffect(() => {
     if (p5Instance.current) {
-      generateSitesAndTriangulation(p5Instance.current, params, seed);
-      p5Instance.current.redraw();
+      generateVoronoiDiagram(p5Instance.current, params, seed)
+      p5Instance.current.redraw()
     }
-  }, [params, seed, generateSitesAndTriangulation]);
+  }, [params, seed, generateVoronoiDiagram])
 
   const regenerate = () => {
-    const newSeed = Math.floor(Math.random() * 10000);
-    setSeed(newSeed);
-  };
+    setSeed(Math.floor(Math.random() * 10000))
+  }
 
   const exportSVG = () => {
-    const delaunay = delaunayRef.current;
-    const currentSitePoints = sitePointsForDelaunay.current;
-
-    if (!delaunay || !p5Instance.current || delaunay.triangles.length === 0 || currentSitePoints.length === 0) {
-      console.error("Delaunay data or site points not available or insufficient for SVG export.");
-      return;
+    if (!voronoi.current || !sites.current.length) {
+      console.error("Voronoi data not available for SVG export")
+      return
     }
 
-    let svgOutput = `<svg width="${canvasSize.width}" height="${canvasSize.height}" xmlns="http://www.w3.org/2000/svg" style="background-color: white;">\n`;
-    svgOutput += `  <g stroke="black" stroke-width="1" fill="none">\n`;
-
-    const triangles = delaunay.triangles;
-    for (let i = 0; i < triangles.length; i += 3) {
-      const p1 = currentSitePoints[triangles[i]];
-      const p2 = currentSitePoints[triangles[i + 1]];
-      const p3 = currentSitePoints[triangles[i + 2]];
-      if (p1 && p2 && p3) {
-        svgOutput += `    <line x1="${p1[0].toFixed(2)}" y1="${p1[1].toFixed(2)}" x2="${p2[0].toFixed(2)}" y2="${p2[1].toFixed(2)}"/>\n`;
-        svgOutput += `    <line x1="${p2[0].toFixed(2)}" y1="${p2[1].toFixed(2)}" x2="${p3[0].toFixed(2)}" y2="${p3[1].toFixed(2)}"/>\n`;
-        svgOutput += `    <line x1="${p3[0].toFixed(2)}" y1="${p3[1].toFixed(2)}" x2="${p1[0].toFixed(2)}" y2="${p1[1].toFixed(2)}"/>\n`;
-      }
+    let svgOutput = `<svg width="${canvasSize.width}" height="${canvasSize.height}" xmlns="http://www.w3.org/2000/svg" style="background-color: white;">\n`
+    
+    // Draw Voronoi cells
+    svgOutput += `  <g stroke="black" stroke-width="1" fill="none">\n`
+    for (let i = 0; i < sites.current.length; i++) {
+      const cell = voronoi.current.cellPolygon(i)
+      if (!cell) continue
+      
+      const points = (cell as Point[]).map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' ')
+      svgOutput += `    <polygon points="${points}"/>\n`
     }
-    svgOutput += `  </g>\n`;
+    svgOutput += `  </g>\n`
+    
+    svgOutput += `</svg>`
 
-    if (params.showPoints && sitesToDraw.current.length > 0) {
-        svgOutput += `  <g fill="black" stroke="none">\n`;
-        for(const site of sitesToDraw.current) {
-            svgOutput += `    <circle cx="${site.x.toFixed(2)}" cy="${site.y.toFixed(2)}" r="2.5"/>\n`;
-        }
-        svgOutput += `  </g>\n`;
-    }
+    const blob = new Blob([svgOutput], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `voronoi-diagram-${seed}.svg`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
-    svgOutput += `</svg>`;
-
-    const blob = new Blob([svgOutput], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `delaunay-triangulation-${seed}.svg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
-
- return (
+  return (
     <main className="min-h-screen p-4 md:p-8 bg-gray-100 flex flex-col items-center">
       <div className="w-full max-w-6xl bg-white shadow-xl p-4 md:p-8 rounded-lg">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-700 flex-grow">Delaunay Triangulation Generator</h1>
-          <Link href="/" legacyBehavior passHref>
+          <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-700 flex-grow">
+            Voronoi Diagram Generator
+          </h1>
+          <Link href="/" passHref>
             <Button asChild variant="outline" className="ml-4">
-              <a>Back to Home</a>
+              Back to Home
             </Button>
           </Link>
         </div>
         
         <div className="flex flex-col lg:flex-row gap-6 mb-6">
-          <div className="lg:flex-grow">
-            <div className="border border-gray-300 rounded-md overflow-hidden aspect-[4/3] shadow-inner bg-white mx-auto lg:mx-0" style={{ maxWidth: canvasSize.width }}>
+          <div className="flex-1 min-w-0">
+            <div className="border border-gray-300 rounded-md overflow-hidden shadow-inner bg-white w-full max-w-[800px] mx-auto lg:mx-0" 
+                 style={{ aspectRatio: '4/3' }}>
               {/* @ts-expect-error p5 types can be tricky */}
               <Sketch setup={setup} draw={draw} />
             </div>
           </div>
 
-          <div className="lg:w-96 space-y-6 p-4 border border-gray-200 rounded-lg shadow-sm bg-slate-50 flex-shrink-0">
-            <div className="grid grid-cols-1 gap-y-4">
-                <p className="text-lg font-semibold text-gray-700">Controls</p>
-                <div>
-                  <label htmlFor="numPoints" className={labelStyle}>Number of Points ({params.numPoints})</label>
-                  <Slider value={[params.numPoints]} onValueChange={v => handleParamChange('numPoints', v[0])} min={3} max={200} step={1} />
-                </div>
+          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 space-y-4 p-6 border border-gray-200 rounded-lg shadow-sm bg-slate-50">
+            <div className="space-y-4">
+              <p className="text-lg font-semibold text-gray-700">Controls</p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Points ({params.numPoints})
+                </label>
+                <Slider 
+                  value={[params.numPoints]} 
+                  onValueChange={v => handleParamChange('numPoints', v[0])} 
+                  min={3} 
+                  max={1000} 
+                  step={1} 
+                />
+              </div>
 
-                <div className="flex items-center mt-2">
-                  <input 
-                    type="checkbox" 
-                    id="showPoints" 
-                    checked={params.showPoints} 
-                    onChange={e => handleParamChange('showPoints', e.target.checked)} 
-                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  <label htmlFor="showPoints" className="ml-2 text-sm text-gray-700">Show Points</label>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Boundary Margin ({params.boundaryMargin})
+                </label>
+                <Slider 
+                  value={[params.boundaryMargin]} 
+                  onValueChange={v => handleParamChange('boundaryMargin', v[0])} 
+                  min={0} 
+                  max={100} 
+                  step={1} 
+                />
+              </div>
 
-                <div className="flex items-center mt-1">
-                  <input 
-                    type="checkbox" 
-                    id="showTriangleEdges" 
-                    checked={params.showTriangleEdges} 
-                    onChange={e => handleParamChange('showTriangleEdges', e.target.checked)} 
-                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  <label htmlFor="showTriangleEdges" className="ml-2 text-sm text-gray-700">Show Triangle Edges</label>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Distance ({params.minDistance})
+                </label>
+                <Slider 
+                  value={[params.minDistance]} 
+                  onValueChange={v => handleParamChange('minDistance', v[0])} 
+                  min={0} 
+                  max={100} 
+                  step={1} 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Distribution Type
+                </label>
+                <select 
+                  value={params.distributionType} 
+                  onChange={(e) => handleParamChange('distributionType', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-base bg-white text-gray-900"
+                >
+                  <option value="random">Random - Scattered points</option>
+                  <option value="uniform">Uniform - Grid-based layout</option>
+                  <option value="clustered">Clustered - Grouped patterns</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cluster Factor ({params.clusterFactor.toFixed(2)})
+                </label>
+                <Slider 
+                  value={[params.clusterFactor]} 
+                  onValueChange={v => handleParamChange('clusterFactor', v[0])} 
+                  min={0} 
+                  max={1} 
+                  step={0.01} 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Seed Value
+                </label>
+                <input 
+                  type="number" 
+                  value={seed} 
+                  onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-base bg-white text-gray-900"
+                  placeholder="Enter seed number"
+                />
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 gap-4 pt-4 border-t border-gray-200">
-                <Button onClick={regenerate} className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-md shadow-sm transition duration-150">
-                  Regenerate (New Seed)
-                </Button>
-                <Button onClick={exportSVG} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-md shadow-sm transition duration-150">
-                  Export as SVG
-                </Button>
+            <div className="space-y-3 pt-4 border-t border-gray-200">
+              <Button 
+                onClick={regenerate} 
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-md shadow-sm transition duration-150"
+              >
+                Regenerate
+              </Button>
+              <Button 
+                onClick={exportSVG} 
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-md shadow-sm transition duration-150"
+              >
+                Export as SVG
+              </Button>
             </div>
           </div>
         </div>
