@@ -17,6 +17,11 @@ export default function HomePage() {
       description: 'Generate and export 3D arrangements of wireframe boxes.',
       href: '/abstract-boxes',
     },
+    {
+      name: 'Delaunay Triangulation Generator',
+      description: 'Create and export 2D Delaunay triangulations.',
+      href: '/voronoi-diagram',
+    },
   ]
 
   return (
