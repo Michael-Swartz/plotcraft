@@ -22,7 +22,11 @@ export default function HomePage() {
       description: 'Generate organic cellular patterns with customizable point distributions for pen plotting.',
       href: '/voronoi-diagram',
     },
-
+    {
+      name: 'Maze Generator',
+      description: 'Generate and export solvable 2D mazes.',
+      href: '/maze-generator',
+    },
   ]
 
   return (
